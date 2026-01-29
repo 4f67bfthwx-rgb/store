@@ -1,6 +1,12 @@
 <?= $this->extend('layouts/main') ?>
 
 <?= $this->section('content') ?>
+<style>
+       .alert ul {
+        margin-bottom: 0;
+        padding-left: 20px; 
+    }
+</style>
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-6">

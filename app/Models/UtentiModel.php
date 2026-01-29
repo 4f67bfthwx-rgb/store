@@ -14,6 +14,8 @@ class UtentiModel extends Model
         'email', 
         'password', 
         'ruolo', 
-        'created_at'
+        'created_at',
+        'punti_fedelta'
     ];
 }
+

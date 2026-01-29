@@ -55,7 +55,7 @@
                             <label class="form-label fw-bold">Foto Principale</label>
                             <div class="d-flex align-items-center gap-3">
                                 <?php if($prodotto['immagine']): ?>
-                                    <img src="data:<?= $prodotto['immagine_type'] ?>;base64,<?= base64_encode($prodotto['immagine']) ?>" width="80" class="rounded border">
+                                    <img src="<?= base_url('uploads/prodotti/' . $prodotto['immagine']) ?>" width="80" class="rounded border" alt="Foto prodotto">
                                 <?php endif; ?>
                                 <input type="file" name="immagine" class="form-control" accept="image/*">
                             </div>
@@ -73,7 +73,7 @@
                                 <?php if(!empty($galleria)): ?>
                                     <?php foreach($galleria as $foto): ?>
                                         <div class="col-4 col-md-2 position-relative">
-                                            <img src="data:<?= $foto['foto_type'] ?>;base64,<?= base64_encode($foto['foto']) ?>" class="img-fluid rounded border">
+                                            <img src="<?= base_url('uploads/galleria/' . $foto['foto']) ?>" class="img-fluid rounded border" alt="Galleria">                                            
                                             
                                             <a href="<?= base_url('admin/elimina_foto/'.$foto['id']) ?>" 
                                                class="btn btn-danger btn-sm position-absolute top-0 end-0" 

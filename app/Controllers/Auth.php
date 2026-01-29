@@ -37,11 +37,16 @@ class Auth extends BaseController
             if ($verify_pass) {
                 // Password corretta: Creiamo la sessione
                 $ses_data = [
-                    'id'       => $data['id'],
-                    'nome'     => $data['nome'],
-                    'email'    => $data['email'], // Fondamentale per il checkout!
-                    'ruolo'    => $data['ruolo'], // 'admin' o 'user'
-                    'isLoggedIn' => true
+                    'id'            => $data['id'],
+                    'nome'          => $data['nome'],
+                    'email'         => $data['email'],
+                    'ruolo'         => $data['ruolo'],
+                    
+                    // --- NOVITÀ: Salviamo i punti in sessione ---
+                    'punti_fedelta' => $data['punti_fedelta'], 
+                    // --------------------------------------------
+                    
+                    'isLoggedIn'    => true
                 ];
                 
                 $session->set($ses_data);
@@ -74,15 +79,31 @@ class Auth extends BaseController
         return view('auth/register');
     }
 
-    // 2. Salva il nuovo utente
+    // 2. Salva il nuovo utente 
     public function store()
     {
         helper(['form']);
+        
+        // Definizione delle regole con messaggi personalizzati
         $rules = [
-            'nome'            => 'required|min_length[3]|max_length[50]',
-            'email'           => 'required|min_length[6]|max_length[100]|valid_email|is_unique[utenti.email]',
-            'password'        => 'required|min_length[4]|max_length[255]',
-            'confirmpassword' => 'matches[password]'
+            'nome' => 'required|min_length[3]|max_length[50]',
+            
+            'email' => [
+                'rules'  => 'required|min_length[6]|max_length[100]|valid_email|is_unique[utenti.email]',
+                'errors' => [
+                    'is_unique'   => 'Questa email è già registrata nel sistema.',
+                    'valid_email' => 'Inserisci un indirizzo email valido.'
+                ]
+            ],
+            
+            'password' => 'required|min_length[4]|max_length[255]',
+            
+            'confirmpassword' => [
+                'rules'  => 'matches[password]',
+                'errors' => [
+                    'matches' => 'Le due password non coincidono.' 
+                ]
+            ]
         ];
 
         if ($this->validate($rules)) {
@@ -92,13 +113,15 @@ class Auth extends BaseController
                 'nome'     => $this->request->getVar('nome'),
                 'email'    => $this->request->getVar('email'),
                 'password' => password_hash($this->request->getVar('password'), PASSWORD_DEFAULT),
-                'ruolo'    => 'user' // <--- SICUREZZA: Chi si registra da fuori è SEMPRE 'user'
+                'ruolo'    => 'user' // Default user per registrazioni pubbliche
             ];
             
             $model->save($data);
+            
+            // Redirect al login con messaggio di successo
             return redirect()->to('/login')->with('msg', 'Registrazione completata! Ora puoi accedere.');
         } else {
-            // Se c'è un errore, ricarica la pagina mostrando gli errori
+            // Se c'è errore, ricarica la pagina mostrando gli errori specifici
             $data['validation'] = $this->validator;
             return view('auth/register', $data);
         }

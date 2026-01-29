@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Shop - Pannello di Controllo</title>
+    <title>My Shop - E-Commerce</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -35,21 +35,19 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav me-auto">
     
-    <?php if (session()->get('ruolo') == 'admin'): ?>
-        <?php if (session()->get('ruolo') == 'admin'): ?>
-    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/prodotti') ?>">Gestione Prodotti</a></li>
-    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/inventario') ?>">Inventario</a></li>
-    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/ordini') ?>">Ordini</a></li>
-    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/statistiche') ?>">Vendite</a></li>
-<?php endif; ?>
-    <?php else: ?>
-        <li class="nav-item">
-            <a class="nav-link <?= (url_is('/')) ? 'active' : '' ?>" href="<?= base_url('/') ?>">Catalogo Prodotti</a>
-        </li>
-    <?php endif; ?>
+            <?php if (session()->get('ruolo') == 'admin'): ?>
+                <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/prodotti') ?>">Gestione Prodotti</a></li>
+                <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/inventario') ?>">Inventario</a></li>
+                <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/ordini') ?>">Ordini</a></li>
+                <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/statistiche') ?>">Vendite</a></li>
+            <?php else: ?>
+                <li class="nav-item">
+                    <a class="nav-link <?= (url_is('/')) ? 'active' : '' ?>" href="<?= base_url('/') ?>">Catalogo Prodotti</a>
+                </li>
+            <?php endif; ?>
 
-</ul>
+          </ul>
           
           <ul class="navbar-nav ms-auto align-items-center">
             
@@ -72,12 +70,33 @@
             <?php endif; ?>
 
             <?php if (session()->get('isLoggedIn')): ?>
+                
+                <?php if (session()->get('ruolo') != 'admin'): ?>
+                <li class="nav-item me-3 d-none d-lg-block">
+                    <span class="badge bg-warning text-dark shadow-sm d-flex align-items-center gap-1" title="I tuoi Punti Fedeltà" style="font-size: 0.9rem;">
+                        ⭐ <?= session()->get('punti_fedelta') ?? 0 ?> Punti
+                    </span>
+                </li>
+                <?php endif; ?>
+
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle text-white fw-bold" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle"></i> <?= esc(session()->get('nome')) ?>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                         <li><span class="dropdown-item-text small text-muted text-uppercase"><?= session()->get('ruolo') ?></span></li>
+                        
+                        <li class="d-lg-none">
+                            <span class="dropdown-item-text fw-bold text-warning">
+                                ⭐ Punti: <?= session()->get('punti_fedelta') ?? 0 ?>
+                            </span>
+                        </li>
+                        
+                        <?php if (session()->get('ruolo') != 'admin'): ?>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="<?= base_url('profilo') ?>"><i class="bi bi-card-list"></i> I miei Ordini</a></li>
+                        <?php endif; ?>
+
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="<?= base_url('logout') ?>"><i class="bi bi-box-arrow-right"></i> Esci</a></li>
                     </ul>
@@ -102,16 +121,49 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
+        
+        <?php if (session()->getFlashdata('success')): ?>
+            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+                <?= session()->getFlashdata('success') ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
+        <?php if (session()->getFlashdata('error')): ?>
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+                <?= session()->getFlashdata('error') ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
     </div>
 
     <main class="main-content">
         <?= $this->renderSection('content') ?>
     </main>
 
-    <footer class="bg-dark text-white text-center py-4 mt-5">
+    <footer class="bg-dark text-white pt-5 pb-3 mt-5">
         <div class="container">
-            <p class="mb-1 fw-bold">My Shop - E-Commerce Locale</p>
-            <p class="mb-0 small text-muted">&copy; 2026 Tutti i diritti riservati. Solo ritiro in sede.</p>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h5 class="fw-bold text-uppercase text-warning mb-3">My Shop</h5>
+                    <p class="small text-secondary">
+                        Il miglior negozio di abbigliamento della città. 
+                        Qualità, stile e passione al tuo servizio.
+                    </p>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5 class="fw-bold text-uppercase mb-3">📍 Dove Siamo</h5>
+                    <p class="mb-1"><i class="bi bi-geo-alt-fill text-danger me-2"></i> Via Roma 10, Milano</p>
+                    <p class="mb-1"><i class="bi bi-telephone-fill text-success me-2"></i> 02 12345678</p>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5 class="fw-bold text-uppercase mb-3">🕒 Orari Apertura</h5>
+                    <p class="small text-white-50">Lun-Ven: 09:00 - 19:30<br>Sab: 09:00 - 13:00</p>
+                    <div class="mt-3">
+                        <small class="text-muted">&copy; <?= date('Y') ?> Tutti i diritti riservati.</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </footer>
 

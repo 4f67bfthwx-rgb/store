@@ -10,12 +10,17 @@ class OrdiniModel extends Model
     protected $primaryKey = 'id';
     
     protected $allowedFields = [
-        'nome_cliente', 'email', 'indirizzo', 'citta', 
-        'totale', 'dettagli_prodotti', 'stato', 'created_at'
+        'nome_cliente', 
+        'email', 
+        'indirizzo', 
+        'citta', 
+        'totale', 
+        'dettagli_prodotti', 
+        'stato', 
+        'created_at',
+        'omaggi' 
     ];
     
     protected $useTimestamps = true;
-
-    // Assicurati che non ci sia nulla in $casts che riguardi dettagli_prodotti
     protected array $casts = []; 
 }

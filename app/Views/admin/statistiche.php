@@ -50,12 +50,12 @@
                 <h2 class="fw-bold m-0">€ <?= number_format($stats['totale_periodo'], 2, ',', '.') ?></h2>
             </div>
         </div>
-        <div class="col-md-6">
+<!--         <div class="col-md-6">
             <div class="card bg-dark text-white shadow-sm border-0 p-4">
                 <small class="text-uppercase opacity-75 fw-bold text-warning">Totale Incassato Anno <?= $filtroAnno ?: date('Y') ?></small>
                 <h2 class="fw-bold m-0">€ <?= number_format($stats['totale_anno'], 2, ',', '.') ?></h2>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <div class="row">

@@ -2,8 +2,10 @@
 
 namespace App\Controllers;
 
+use App\Controllers\BaseController;
 use App\Models\ProdottiModel;
 use App\Models\OrdiniModel;
+use App\Models\ConfigurazioniModel; 
 
 class Carrello extends BaseController
 {
@@ -33,7 +35,6 @@ class Carrello extends BaseController
         
         if (!$prodotto) return redirect()->back()->with('errore', 'Prodotto non trovato.');
 
-        // Controllo Stock
         $magazzino = is_string($prodotto['magazzino']) ? json_decode($prodotto['magazzino'], true) : $prodotto['magazzino'];
         $qtyInStock = (int)($magazzino[$taglia][$colore] ?? 0);
 
@@ -46,14 +47,13 @@ class Carrello extends BaseController
             return redirect()->back()->with('errore', "Disponibilità insufficiente. In magazzino: $qtyInStock");
         }
 
-        // Creazione Item (Senza immagine_type, usiamo il nome file)
         $item = [
             'id'       => $prodotto['id'],
             'nome'     => $prodotto['nome'],
             'prezzo'   => $prodotto['prezzo'],
             'taglia'   => $taglia,
             'colore'   => $colore,
-            'immagine' => $prodotto['immagine'], // Nome del file
+            'immagine' => $prodotto['immagine'], 
             'quantita' => $qtyGiaInCarrello + $qtyRichiesta,
             'rowid'    => $rowid 
         ];
@@ -64,7 +64,6 @@ class Carrello extends BaseController
         return redirect()->to('/carrello')->with('messaggio', "Prodotto aggiunto al carrello!");
     }
 
-    // NUOVO METODO: Aggiorna quantità dal carrello
     public function aggiorna()
     {
         $session = session();
@@ -76,7 +75,6 @@ class Carrello extends BaseController
             $prodottiModel = new ProdottiModel();
             $prodotto = $prodottiModel->find($carrello[$rowid]['id']);
             $magazzino = is_string($prodotto['magazzino']) ? json_decode($prodotto['magazzino'], true) : $prodotto['magazzino'];
-            
             $maxDisponibile = (int)($magazzino[$carrello[$rowid]['taglia']][$carrello[$rowid]['colore']] ?? 0);
 
             if ($nuovaQty > $maxDisponibile) {
@@ -117,27 +115,39 @@ class Carrello extends BaseController
         return view('carrello/checkout', ['items' => $carrello]);
     }
 
+    // =========================================================================
+    // CONFERMA ORDINE (SENZA CITTÀ, SENZA EMAIL)
+    // =========================================================================
     public function conferma()
     {
         $session = session();
         $carrello = $session->get('carrello');
         if (empty($carrello)) return redirect()->to('/');
 
-        $ordiniModel = new OrdiniModel();
-        $prodottiModel = new ProdottiModel();
+        $ordiniModel  = new OrdiniModel();
+        $prodottiModel= new ProdottiModel();
+        $utentiModel  = new \App\Models\UtentiModel(); 
+        $confModel    = new ConfigurazioniModel(); 
+
         $totale = 0;
         $carrelloPulito = [];
 
+        // 1. Calcolo totale e Stock
         foreach ($carrello as $item) {
             $totale += $item['prezzo'] * $item['quantita'];
             $carrelloPulito[] = [
-                'id' => $item['id'], 'nome' => $item['nome'], 'prezzo' => $item['prezzo'],
-                'taglia' => $item['taglia'], 'colore' => $item['colore'], 'quantita' => $item['quantita']
+                'id' => $item['id'], 
+                'nome' => $item['nome'], 
+                'prezzo' => $item['prezzo'],
+                'taglia' => $item['taglia'], 
+                'colore' => $item['colore'], 
+                'quantita' => $item['quantita']
             ];
 
             // Scala Stock
             $prod = $prodottiModel->find($item['id']);
             $stock = is_string($prod['magazzino']) ? json_decode($prod['magazzino'], true) : $prod['magazzino'];
+            
             if (isset($stock[$item['taglia']][$item['colore']])) {
                 $stock[$item['taglia']][$item['colore']] -= $item['quantita'];
                 if ($stock[$item['taglia']][$item['colore']] < 0) $stock[$item['taglia']][$item['colore']] = 0;
@@ -145,21 +155,69 @@ class Carrello extends BaseController
             $prodottiModel->update($item['id'], ['magazzino' => json_encode($stock)]);
         }
 
+        // 2. Logica Fedeltà
+        $scontoApplicato = 0;
+        $puntiDaScalare = 0;
+        $notaOmaggio = null;
+
+        if (session()->get('isLoggedIn')) {
+            $userId = session()->get('id');
+            $user = $utentiModel->find($userId);
+            $userPunti = $user['punti_fedelta'];
+
+            // Usiamo where()->first() per evitare errori se manca l'ID
+            $dataDb = $confModel->where('chiave', 'regole_fedelta')->first();
+            $regole = ($dataDb) ? json_decode($dataDb['valore'], true) : [];
+
+            usort($regole, function($a, $b) {
+                return $b['punti'] - $a['punti'];
+            });
+
+            foreach ($regole as $regola) {
+                if ($userPunti >= $regola['punti']) {
+                    $perc = $regola['sconto'];
+                    $puntiDaScalare = $regola['punti'];
+                    $scontoApplicato = ($totale * $perc) / 100;
+                    $totale -= $scontoApplicato; 
+                    $notaOmaggio = "Sconto Fedeltà {$perc}% applicato (-€" . number_format($scontoApplicato, 2) . ")";
+                    break;
+                }
+            }
+        }
+
+        // 3. Prepariamo i dati dell'ordine (SENZA CITTÀ)
         $datiOrdine = [
             'nome_cliente'      => $this->request->getPost('nome_cliente'),
             'email'             => $this->request->getPost('email'),
             'indirizzo'         => $this->request->getPost('indirizzo'),
-            'citta'             => $this->request->getPost('citta'),
-            'totale'            => $totale,
+            // 'citta' è stata rimossa
+            'totale'            => $totale, 
             'dettagli_prodotti' => json_encode($carrelloPulito),
-            'stato'             => 'In lavorazione'
+            'stato'             => 'In lavorazione',
+            'created_at'        => date('Y-m-d H:i:s'),
+            'omaggi'            => $notaOmaggio
         ];
 
-        if ($ordiniModel->save($datiOrdine)) {
-            $email = $datiOrdine['email'];
+        // 4. Salvataggio
+        if ($ordiniModel->insert($datiOrdine)) {
+            $orderId = $ordiniModel->getInsertID();
+
+            // 5. Aggiornamento Punti
+            if (session()->get('isLoggedIn')) {
+                $userAggiornato = $utentiModel->find($userId);
+                $puntiAttuali = $userAggiornato['punti_fedelta'];
+                $puntiAttuali -= $puntiDaScalare;
+                $puntiGuadagnati = (int) $totale; 
+                $saldoFinale = $puntiAttuali + $puntiGuadagnati;
+                $utentiModel->update($userId, ['punti_fedelta' => $saldoFinale]);
+                session()->set('punti_fedelta', $saldoFinale);
+            }
+
+            // 6. Pulizia e Successo (NIENTE EMAIL)
             $session->remove('carrello');
-            return view('carrello/successo', ['email_cliente' => $email]);
+            return view('carrello/successo', ['order_id' => $orderId]);
         }
-        return redirect()->back()->with('errore', 'Errore salvataggio.');
+
+        return redirect()->back()->with('errore', 'Errore durante il salvataggio dell\'ordine.');
     }
 }

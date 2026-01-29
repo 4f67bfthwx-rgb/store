@@ -1,84 +1,47 @@
 <?= $this->extend('layouts/main') ?>
 
 <?= $this->section('content') ?>
-
 <div class="container py-5">
+    <h2 class="mb-4">📦 Checkout</h2>
     <div class="row">
-        <div class="col-md-4 order-md-2 mb-4">
-            <h4 class="d-flex justify-content-between align-items-center mb-3">
-                <span class="text-primary">Il tuo carrello</span>
-                <span class="badge bg-primary rounded-pill"><?= count($items) ?></span>
-            </h4>
-            <ul class="list-group mb-3 shadow-sm">
-                <?php $totale = 0; ?>
-                <?php foreach($items as $item): ?>
-                    <?php $totale += $item['prezzo'] * $item['quantita']; ?>
-                    <li class="list-group-item d-flex justify-content-between lh-sm">
-                        <div>
-                            <h6 class="my-0"><?= esc($item['nome']) ?></h6>
-                            <small class="text-muted"><?= $item['taglia'] ?> / <?= $item['colore'] ?> (x<?= $item['quantita'] ?>)</small>
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form action="<?= base_url('carrello/conferma') ?>" method="post">
+                        
+                        <h5 class="mb-3">Dati Spedizione</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Nome Completo</label>
+                            <input type="text" name="nome_cliente" class="form-control" required value="<?= session()->get('nome') ?>">
                         </div>
-                        <span class="text-muted">€ <?= number_format($item['prezzo'] * $item['quantita'], 2) ?></span>
-                    </li>
-                <?php endforeach; ?>
-                <li class="list-group-item d-flex justify-content-between bg-light fw-bold">
-                    <span>Totale da Pagare</span>
-                    <strong>€ <?= number_format($totale, 2) ?></strong>
-                </li>
-            </ul>
-        </div>
-
-        <div class="col-md-8 order-md-1">
-            <div class="alert alert-info border-0 shadow-sm">
-                <i class="bi bi-shop"></i> <strong>Nota Bene:</strong> Il pagamento avverrà direttamente al ritiro in negozio.
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" required value="<?= session()->get('email') ?>">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Indirizzo</label>
+                            <input type="text" name="indirizzo" class="form-control" placeholder="Via, numero civico..." required>
+                        </div>
+                        <hr class="my-4">
+                        <button type="submit" class="btn btn-success w-100 py-2 fw-bold">CONFERMA E PAGA</button>
+                    </form>
+                </div>
             </div>
-
-            <h4 class="mb-3 fw-bold">📦 Dati per il Ritiro</h4>
-            
-            <form action="<?= base_url('checkout/conferma') ?>" method="post">
-                <div class="row g-3">
-                    <div class="col-12">
-                        <label class="form-label">Nome e Cognome</label>
-                        <input type="text" class="form-control" name="nome_cliente" 
-                               value="<?= esc(session()->get('nome') ?? '') ?>" required>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label">Email (per la conferma)</label>
-                        <input type="email" class="form-control" name="email" placeholder="tu@esempio.com" 
-                               value="<?= esc(session()->get('email') ?? '') ?>" required>
-                    </div>
-                    
-                    <div class="col-12">
-                        <label class="form-label">Città di provenienza</label>
-                        <input type="text" class="form-control" name="citta" required>
-                    </div>
-                    
-                    <input type="hidden" name="indirizzo" value="Ritiro in Sede">
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <h5>Riepilogo</h5>
+                    <?php 
+                        $tot = 0;
+                        foreach($items as $i) { $tot += $i['prezzo'] * $i['quantita']; }
+                    ?>
+                    <h3 class="fw-bold mt-3">€ <?= number_format($tot, 2) ?></h3>
+                    <small class="text-muted">*Sconti e punti calcolati alla conferma</small>
                 </div>
-
-                <hr class="my-4">
-
-                <h4 class="mb-3">Metodo di Pagamento</h4>
-                <div class="my-3">
-                    <div class="form-check p-3 border rounded bg-light shadow-sm">
-                        <input id="cash" name="paymentMethod" type="radio" class="form-check-input" checked>
-                        <label class="form-check-label fw-bold" for="cash">
-                            💵 Pagamento in cassa al ritiro
-                        </label>
-                        <div class="text-muted small mt-1">Prenota ora, paga quando vieni a trovarci.</div>
-                    </div>
-                </div>
-
-                <hr class="my-4">
-
-                <button class="w-100 btn btn-success btn-lg fw-bold shadow" type="submit">
-                    CONFERMA PRENOTAZIONE (€ <?= number_format($totale, 2) ?>)
-                </button>
-                <a href="<?= base_url('carrello') ?>" class="w-100 btn btn-link mt-2">Modifica il carrello</a>
-            </form>
+            </div>
         </div>
     </div>
 </div>
-
 <?= $this->endSection() ?>

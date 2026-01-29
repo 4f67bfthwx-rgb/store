@@ -8,10 +8,6 @@
                 <div class="card-body p-4">
                     <h3 class="fw-bold mb-4 text-center">Accedi</h3>
 
-                    <?php if(session()->getFlashdata('msg')): ?>
-                        <div class="alert alert-danger"><?= session()->getFlashdata('msg') ?></div>
-                    <?php endif; ?>
-
                     <form action="<?= base_url('loginAuth') ?>" method="post">
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
