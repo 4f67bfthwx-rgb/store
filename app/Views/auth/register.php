@@ -14,21 +14,27 @@
                 <div class="card-body p-4">
                     <h3 class="fw-bold mb-4 text-center">Registrati</h3>
 
-                    <?php if(isset($validation)): ?>
+                    <?php if (session()->get('errors')): ?>
                         <div class="alert alert-danger">
-                            <?= $validation->listErrors() ?>
+                            <ul>
+                            <?php foreach (session()->get('errors') as $error): ?>
+                                <li><?= esc($error) ?></li>
+                            <?php endforeach ?>
+                            </ul>
                         </div>
                     <?php endif; ?>
 
                     <form action="<?= base_url('store') ?>" method="post">
+                        <?= csrf_field() ?>
+
                         <div class="mb-3">
                             <label class="form-label">Nome Completo</label>
-                            <input type="text" name="nome" class="form-control" value="<?= set_value('nome') ?>" required>
+                            <input type="text" name="nome" class="form-control" value="<?= old('nome') ?>" required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control" value="<?= set_value('email') ?>" required>
+                            <input type="email" name="email" class="form-control" value="<?= old('email') ?>" required>
                         </div>
 
                         <div class="row">
@@ -38,7 +44,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Conferma Password</label>
-                                <input type="password" name="confirmpassword" class="form-control" required>
+                                <input type="password" name="confpassword" class="form-control" required>
                             </div>
                         </div>
                         

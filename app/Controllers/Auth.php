@@ -41,11 +41,7 @@ class Auth extends BaseController
                     'nome'          => $data['nome'],
                     'email'         => $data['email'],
                     'ruolo'         => $data['ruolo'],
-                    
-                    // --- NOVITÀ: Salviamo i punti in sessione ---
                     'punti_fedelta' => $data['punti_fedelta'], 
-                    // --------------------------------------------
-                    
                     'isLoggedIn'    => true
                 ];
                 
@@ -80,50 +76,66 @@ class Auth extends BaseController
     }
 
     // 2. Salva il nuovo utente 
+    // 2. Salva il nuovo utente 
     public function store()
     {
-        helper(['form']);
-        
-        // Definizione delle regole con messaggi personalizzati
+        // 1. Definiamo le regole
         $rules = [
-            'nome' => 'required|min_length[3]|max_length[50]',
-            
-            'email' => [
-                'rules'  => 'required|min_length[6]|max_length[100]|valid_email|is_unique[utenti.email]',
-                'errors' => [
-                    'is_unique'   => 'Questa email è già registrata nel sistema.',
-                    'valid_email' => 'Inserisci un indirizzo email valido.'
-                ]
+            'nome'          => 'required|min_length[2]|max_length[50]',
+            'email'         => 'required|min_length[4]|max_length[100]|valid_email|is_unique[utenti.email]',
+            'password'      => 'required|min_length[4]|max_length[255]',
+            'confpassword'  => 'matches[password]'
+        ];
+
+        // 2. Definiamo i messaggi in ITALIANO
+        $messaggi = [
+            'nome' => [
+                'required'   => 'Il nome è obbligatorio.',
+                'min_length' => 'Il nome deve contenere almeno 2 caratteri.',
+                'max_length' => 'Il nome è troppo lungo.'
             ],
-            
-            'password' => 'required|min_length[4]|max_length[255]',
-            
-            'confirmpassword' => [
-                'rules'  => 'matches[password]',
-                'errors' => [
-                    'matches' => 'Le due password non coincidono.' 
-                ]
+            'email' => [
+                'required'    => 'L\'email è obbligatoria.',
+                'valid_email' => 'Inserisci un indirizzo email valido.',
+                'is_unique'   => 'Questa email è già registrata nel sistema.',
+                'min_length'  => 'L\'email è troppo corta.'
+            ],
+            'password' => [
+                'required'   => 'La password è obbligatoria.',
+                'min_length' => 'La password deve avere almeno 4 caratteri.'
+            ],
+            'confpassword' => [
+                'matches' => 'Le due password non coincidono.'
             ]
         ];
 
-        if ($this->validate($rules)) {
-            $model = new UtentiModel();
-            
-            $data = [
-                'nome'     => $this->request->getVar('nome'),
-                'email'    => $this->request->getVar('email'),
-                'password' => password_hash($this->request->getVar('password'), PASSWORD_DEFAULT),
-                'ruolo'    => 'user' // Default user per registrazioni pubbliche
-            ];
-            
-            $model->save($data);
-            
-            // Redirect al login con messaggio di successo
-            return redirect()->to('/login')->with('msg', 'Registrazione completata! Ora puoi accedere.');
+        // 3. Validiamo passando anche i messaggi tradotti
+        if (! $this->validate($rules, $messaggi)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        $utentiModel = new \App\Models\UtentiModel();
+
+        // Contiamo gli utenti
+        $numeroUtenti = $utentiModel->countAll();
+
+        // Decidiamo il ruolo (Admin se è il primo, User gli altri)
+        $ruoloAssegnato = ($numeroUtenti == 0) ? 'admin' : 'user';
+
+        $data = [
+            'nome'     => $this->request->getVar('nome'),
+            'email'    => $this->request->getVar('email'),
+            'password' => password_hash($this->request->getVar('password'), PASSWORD_DEFAULT),
+            'ruolo'    => $ruoloAssegnato 
+        ];
+
+        $utentiModel->save($data);
+
+        // Messaggio di successo
+        if ($ruoloAssegnato == 'admin') {
+            return redirect()->to('/login')->with('success', 'Registrazione completata! Sei il Primo Utente (ADMIN).');
         } else {
-            // Se c'è errore, ricarica la pagina mostrando gli errori specifici
-            $data['validation'] = $this->validator;
-            return view('auth/register', $data);
+            return redirect()->to('/login')->with('success', 'Registrazione completata! Ora puoi accedere.');
         }
     }
 
