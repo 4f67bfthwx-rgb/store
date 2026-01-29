@@ -190,7 +190,6 @@ class Carrello extends BaseController
             'nome_cliente'      => $this->request->getPost('nome_cliente'),
             'email'             => $this->request->getPost('email'),
             'indirizzo'         => $this->request->getPost('indirizzo'),
-            // 'citta' è stata rimossa
             'totale'            => $totale, 
             'dettagli_prodotti' => json_encode($carrelloPulito),
             'stato'             => 'In lavorazione',
